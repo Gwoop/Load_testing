@@ -1,3 +1,4 @@
+import random
 from tkinter import *
 from tkinter import ttk
 from functools import partial
@@ -24,10 +25,10 @@ def bdoracle(quvery):
     password = decryptedAccses[0]
     DB = "MSDAORA.1/" + decryptedAccses[2]
     connection = cx_Oracle.connect(user=user, password=password, dsn=DB, encoding="UTF-8")
-    #ещё как вариант con = cx_Oracle.connect('username/password@localhost')
+    # ещё как вариант con = cx_Oracle.connect('username/password@localhost')
     for i in quvery:
         cur = connection.cursor()
-        cur.execute(query= i)
+        cur.execute(query=i)
     connection.close()
 
 
@@ -52,17 +53,16 @@ def threads():
     time.sleep(5)
     xlsx = readxlsx()
     i = 0
-    T = 2  # стартовое число потоков
+    T = 1  # стартовое число потоков
     countermax = T
     sended_request = 0
     while zgluchka == 0:
-        print(maxLimit)
-        if int(psutil.virtual_memory()[2]) > maxLimit:  # верхний порог нагрузки
-            T -= 1
-        if int(psutil.virtual_memory()[2]) < maxLimit:
+        if int(psutil.cpu_percent(interval=None)) < maxLimit:
             T += 1
+        if int(psutil.cpu_percent(interval=None)) > maxLimit:  # верхний порог нагрузки
+            T -= 3
         if T > countermax:  #
-            counter = T
+            countermax = T
         if T <= 0:
             T = 1
         time = Timer(5, log, args=(T, countermax, sended_request,))
@@ -70,7 +70,7 @@ def threads():
 
         threads = []
         for n in range(int(T)):
-            t = Thread(target=bd, args=(xlsx,), daemon=False)
+            t = Thread(target=bdoracle, args=(xlsx,), daemon=False)
             t.start()
             threads.append(t)
         for t in threads:
