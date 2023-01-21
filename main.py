@@ -17,11 +17,13 @@ from tkinter.messagebox import showinfo,showerror,showwarning
 
 
 
-#список элементов для combobox-ов
-modelForComboBox = ["Users","Others","More"]
+
 
 def bdoracle(quvery):
-    connection = cx_Oracle.connect(user="SYSDBA", password="ssxrtx3198", dsn="MSDAORA.1/someBase", encoding="UTF-8")
+    user = decryptedAccses[1]
+    password = decryptedAccses[0]
+    DB = "MSDAORA.1/" + decryptedAccses[2]
+    connection = cx_Oracle.connect(user=user, password=password, dsn=DB, encoding="UTF-8")
     #ещё как вариант con = cx_Oracle.connect('username/password@localhost')
     for i in quvery:
         cur = connection.cursor()
@@ -54,6 +56,7 @@ def threads():
     countermax = T
     sended_request = 0
     while zgluchka == 0:
+        print(maxLimit)
         if int(psutil.virtual_memory()[2]) > maxLimit:  # верхний порог нагрузки
             T -= 1
         if int(psutil.virtual_memory()[2]) < maxLimit:
@@ -129,6 +132,7 @@ class WindowCPU(Tk):
     #старт теста
     def btnStart(self):
         self.labelStatus.config(text="Работает")
+        maxLimit = int(self.procents.get())
         global p
         p = proc_start()
 
