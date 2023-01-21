@@ -46,6 +46,11 @@ def ReadTxtAndBackMassive():
 #лимит
 maxLimit = 50
 
+def GetCpuPersents():
+    output = str(subprocess.check_output('wmic cpu get loadpercentage'))
+    outEnd = int(output[24] + output[25])
+    return  outEnd
+
 def threads():
     zgluchka =0
     import time
@@ -57,9 +62,10 @@ def threads():
     countermax = T
     sended_request = 0
     while zgluchka == 0:
-        if int(psutil.cpu_percent(interval=None)) < maxLimit:
+        #для того чтобы узнать GPU -> psutil.virtual_memory()[2]
+        if GetCpuPersents() < maxLimit:
             T += 1
-        if int(psutil.cpu_percent(interval=None)) > maxLimit:  # верхний порог нагрузки
+        if GetCpuPersents() > maxLimit:  # верхний порог нагрузки
             T -= 1
         if T > countermax:  #
             countermax = T
