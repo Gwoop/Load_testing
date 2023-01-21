@@ -60,7 +60,7 @@ def threads():
         if int(psutil.cpu_percent(interval=None)) < maxLimit:
             T += 1
         if int(psutil.cpu_percent(interval=None)) > maxLimit:  # верхний порог нагрузки
-            T -= 3
+            T -= 1
         if T > countermax:  #
             countermax = T
         if T <= 0:
