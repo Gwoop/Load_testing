@@ -5128,3 +5128,8 @@
 2023-01-22 15:34:15.174706 active_thread: 1 max_thread: 1 sended_request: 3
 2023-01-22 15:34:15.206436 active_thread: 1 max_thread: 1 sended_request: 4
 2023-01-22 15:34:15.222094 active_thread: 1 max_thread: 1 sended_request: 5
+2023-01-22 15:43:56.133238 active_thread: 2 max_thread: 2 sended_request: 0
+2023-01-22 15:43:57.344345 active_thread: 3 max_thread: 3 sended_request: 2
+2023-01-22 15:43:58.610350 active_thread: 4 max_thread: 4 sended_request: 5
+2023-01-22 15:43:59.874002 active_thread: 5 max_thread: 5 sended_request: 9
+2023-01-22 15:44:01.130107 active_thread: 6 max_thread: 6 sended_request: 14

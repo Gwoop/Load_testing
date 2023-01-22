@@ -69,7 +69,8 @@ def threads():
 
 
     while zgluchka == 0:
-
+        #это занимает некоторое время, надо что-то придумать с этим
+        #currentCPU = GetCpuPersents()
         #для того чтобы узнать GPU -> psutil.virtual_memory()[2]
         if psutil.virtual_memory()[2] < maxLimit:
             T += 1
@@ -99,6 +100,9 @@ def proc_start():
     p_to_start = Process(target=threads,daemon=False)
     p_to_start.start()
     return p_to_start
+
+def proc_pause(p_to_pause, seconds):
+    p_to_pause.sleep(seconds)
 
 
 def proc_stop(p_to_stop):
@@ -157,7 +161,7 @@ class WindowCPU(Tk):
     #пауза
     def btnPause(self):
         self.labelStatus.config(text="На пауза")
-        proc_stop(p)
+        proc_pause(p,5)
 
     #стоп
     def btnStop(self):
