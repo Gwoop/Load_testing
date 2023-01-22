@@ -1,1 +1,0 @@
-Provider=MSDAORA.1;Password=ssxrtx3198;User ID=SYSDBA;Data Source=someBase;Persist Security Info=True

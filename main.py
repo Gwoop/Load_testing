@@ -35,11 +35,14 @@ def bdoracle(quvery):
 def ReadTxtAndBackMassive():
     massive = []
     #with open("../DecrypedDataByLine.txt","r") as file: #попровь Project1
-    with open("DecrypedData.txt", "r") as file:
-        for line in file:
-            lineClear = line.replace("\n","")
-            massive.append(lineClear)
-    os.remove("DecrypedData.txt")
+    d =  open("DecrypedData.txt", "r")
+    for line in d:
+        lineClear = line.replace("\n","")
+        massive.append(lineClear)
+    d.close()
+    f = open('DecrypedData.txt', 'w')
+    f.close()
+    #os.remove("DecrypedData.txt")
     #os.remove("../DecrypedDataByLine.txt")
     return massive
 
