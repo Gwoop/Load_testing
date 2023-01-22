@@ -49,26 +49,31 @@ def ReadTxtAndBackMassive():
 #лимит
 maxLimit = 50
 
+
+
 def GetCpuPersents():
     output = str(subprocess.check_output('wmic cpu get loadpercentage'))
-    outEnd = int(output[24] + output[25])
-    return  outEnd
+    nowCpu = int(output[24] + output[25])
+    return nowCpu
+
 
 def threads():
     zgluchka =0
-    import time
-    subprocess.Popen('Project1.exe')
-    time.sleep(5)
+
     xlsx = readxlsx()
     i = 0
     T = 1  # стартовое число потоков
     countermax = T
     sended_request = 0
+
+
+
     while zgluchka == 0:
+
         #для того чтобы узнать GPU -> psutil.virtual_memory()[2]
-        if GetCpuPersents() < maxLimit:
+        if psutil.virtual_memory()[2] < maxLimit:
             T += 1
-        if GetCpuPersents() > maxLimit:  # верхний порог нагрузки
+        if psutil.virtual_memory()[2] > maxLimit:  # верхний порог нагрузки
             T -= 1
         if T > countermax:  #
             countermax = T
@@ -98,6 +103,8 @@ def proc_start():
 
 def proc_stop(p_to_stop):
     p_to_stop.kill()
+    p_to_stop.value = None
+    del p_to_stop
 
 
 
@@ -152,7 +159,6 @@ class WindowCPU(Tk):
         self.labelStatus.config(text="На пауза")
         proc_stop(p)
 
-
     #стоп
     def btnStop(self):
         self.labelStatus.config(text="Остановлен")
@@ -196,6 +202,7 @@ def log(num,nummax,sended_request):
 
 #это код для запуска приложения, так сказать главное окно для начала переходов (костыли)
 def click():
+    #чтение дешифрованных данных и их удаление
     sus = subprocess.Popen('Project1.exe')
     time.sleep(5)
     sus.terminate()
