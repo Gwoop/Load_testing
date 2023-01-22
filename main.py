@@ -16,12 +16,19 @@ import cx_Oracle
 import time
 from tkinter.messagebox import showinfo,showerror,showwarning
 
+decryptedAccses = []
 
 
-
-
-def bdoracle(quvery, n):
-    print(n)
+def bdoracle(quvery):
+    user = decryptedAccses[1]
+    password = decryptedAccses[0]
+    DB = "MSDAORA.1/" + decryptedAccses[2]
+    connection = cx_Oracle.connect(user=user, password=password, dsn=DB, encoding="UTF-8")
+    # ещё как вариант con = cx_Oracle.connect('username/password@localhost')
+    for i in quvery:
+        cur = connection.cursor()
+        cur.execute(query=i)
+    connection.close()
 
 
 def ReadTxtAndBackMassive():
@@ -76,7 +83,7 @@ def threads(maxLimit):
 
         threads = []
         for n in range(int(T)):
-            t = Thread(target=bdoracle, args=(xlsx,n), daemon=False)
+            t = Thread(target=bdoracle, args=(xlsx,), daemon=False)
             threads.append(t)
             t.start()
             sended_request = sended_request + 1
@@ -207,7 +214,7 @@ def click():
         showerror(title="Ошибка",
                   message="К сожалению первичная настройка приложения прошла не успешно\nПроверьте, всё-ли верно вы настроили")
 
-decryptedAccses = []
+
 
 if __name__ == '__main__':
         root = Tk()
