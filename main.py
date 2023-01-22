@@ -20,16 +20,8 @@ from tkinter.messagebox import showinfo,showerror,showwarning
 
 
 
-def bdoracle(quvery):
-    user = decryptedAccses[1]
-    password = decryptedAccses[0]
-    DB = "MSDAORA.1/" + decryptedAccses[2]
-    connection = cx_Oracle.connect(user=user, password=password, dsn=DB, encoding="UTF-8")
-    # ещё как вариант con = cx_Oracle.connect('username/password@localhost')
-    for i in quvery:
-        cur = connection.cursor()
-        cur.execute(query=i)
-    connection.close()
+def bdoracle(quvery, n):
+    print(n)
 
 
 def ReadTxtAndBackMassive():
@@ -46,8 +38,6 @@ def ReadTxtAndBackMassive():
     #os.remove("../DecrypedDataByLine.txt")
     return massive
 
-#лимит
-maxLimit = 50
 
 
 
@@ -57,7 +47,8 @@ def GetCpuPersents():
     return nowCpu
 
 
-def threads():
+def threads(maxLimit):
+    intMaxLimit = int(maxLimit)
     zgluchka =0
 
     xlsx = readxlsx()
@@ -72,9 +63,9 @@ def threads():
         #это занимает некоторое время, надо что-то придумать с этим
         #currentCPU = GetCpuPersents()
         #для того чтобы узнать GPU -> psutil.virtual_memory()[2]
-        if psutil.virtual_memory()[2] < maxLimit:
+        if psutil.virtual_memory()[2] < intMaxLimit:
             T += 1
-        if psutil.virtual_memory()[2] > maxLimit:  # верхний порог нагрузки
+        if psutil.virtual_memory()[2] > intMaxLimit:  # верхний порог нагрузки
             T -= 1
         if T > countermax:  #
             countermax = T
@@ -85,19 +76,17 @@ def threads():
 
         threads = []
         for n in range(int(T)):
-            t = Thread(target=bdoracle, args=(xlsx,), daemon=False)
-            t.start()
+            t = Thread(target=bdoracle, args=(xlsx,n), daemon=False)
             threads.append(t)
-        for t in threads:
-            t.join()
+            t.start()
             sended_request = sended_request + 1
 
 #MainThread = Thread(target=threads, args=(), daemon=False)
 #p1 = Process(target=threads, daemon=False)
 
 
-def proc_start():
-    p_to_start = Process(target=threads,daemon=False)
+def proc_start(maxLimit):
+    p_to_start = Process(target=threads,daemon=False,args=(maxLimit,))
     p_to_start.start()
     return p_to_start
 
@@ -134,7 +123,7 @@ class WindowCPU(Tk):
         self.procents.grid(column=0, row=1, pady=10, sticky="w", padx=10)
         btnStart = ttk.Button(self, text="Старт")
         btnStart.grid(column=0, row=2, pady=10, sticky="w", padx=10)
-        btnStart["command"] = self.btnStart
+        btnStart["command"] = partial(self.btnStart)
 
         btnPause = ttk.Button(self, text="Пауза")
         btnPause.grid(column=0, row=2, pady=10)
@@ -152,9 +141,8 @@ class WindowCPU(Tk):
     #старт теста
     def btnStart(self):
         self.labelStatus.config(text="Работает")
-        maxLimit = int(self.procents.get())
         global p
-        p = proc_start()
+        p = proc_start(str(int(self.procents.get())))
 
 
 
