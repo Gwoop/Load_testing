@@ -1,10 +1,11 @@
 import random
+import threading
 from tkinter import *
 from tkinter import ttk
 from functools import partial
-import psutil
-import pymysql
-import openpyxl
+import psutil#1
+#import pymysql
+import openpyxl#2
 import subprocess
 from threading import Thread
 from threading import Timer
@@ -15,64 +16,158 @@ import os
 import cx_Oracle
 import time
 from tkinter.messagebox import showinfo,showerror,showwarning
+import schedule
+import wx #4
 
 decryptedAccses = []
 
+class TimeEditor(Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Таймер запуска")
+        self.geometry("450x180")
 
-def bdoracle(quvery):
-    user = decryptedAccses[1]
-    password = decryptedAccses[0]
-    DB = "MSDAORA.1/" + decryptedAccses[2]
-    connection = cx_Oracle.connect(user=user, password=password, dsn=DB, encoding="UTF-8")
-    # ещё как вариант con = cx_Oracle.connect('username/password@localhost')
-    for i in quvery:
-        cur = connection.cursor()
-        cur.execute(query=i)
-    connection.close()
+        self.btn1 = ttk.Button(self, text="Запуск")
+        self.btn1["command"] = self.start
+        self.btn1.grid(column=0, row=0, pady=20, padx=35)
 
+        self.btn2 = ttk.Button(self, text="Остановка")
+        self.btn2["command"] = self.end
+        self.btn2.grid(column=1, row=0, pady=20, padx=35)
 
-def ReadTxtAndBackMassive():
-    massive = []
-    #with open("../DecrypedDataByLine.txt","r") as file: #попровь Project1
-    d =  open("DecrypedData.txt", "r")
-    for line in d:
-        lineClear = line.replace("\n","")
-        massive.append(lineClear)
-    d.close()
-    f = open('DecrypedData.txt', 'w')
-    f.close()
-    #os.remove("DecrypedData.txt")
-    #os.remove("../DecrypedDataByLine.txt")
-    return massive
+        self.btn2 = ttk.Button(self, text="Назад")
+        self.btn2["command"] = self.back
+        self.btn2.grid(column=2, row=0, pady=20, padx=35)
+
+        self.labelStatus = Label(self, text="Введите сюда даты запуска", font=("Arial Bold", 12), justify='center')
+        self.labelStatus.grid(column=0, columnspan=3, row=1, pady=20, padx=35)
+
+        self.CommandText = Entry(self, width=20, font=("Arial Bold", 12))
+        self.CommandText.grid(column=0, columnspan=3, row=2, pady=20, padx=35)
 
 
 
+        self.loaddata() #метод загрузки окна
 
-def GetCpuPersents():
-    output = str(subprocess.check_output('wmic cpu get loadpercentage'))
-    nowCpu = int(output[24] + output[25])
-    return nowCpu
+    def start(self):
+        # global p
+        # p.kill()
+        from datetime import timedelta
+        from datetime import datetime
+        now = datetime.now()
+        run_at = now + timedelta(minutes=1)
+        delay = (run_at - now).total_seconds()
+
+        threading.Timer(5, threads(int("60"), "self.nameDB.get()")).start()
 
 
-def threads(maxLimit):
-    intMaxLimit = int(maxLimit)
+        pass
+
+    def end(self):
+        pass
+
+    def loaddata(self):
+        pass
+
+    def back(self):
+        self.destroy()
+        window = MainWindow()
+
+#Окно для взаимодесвия с конфиг файлом
+class EditXLSS(Tk):
+    def __init__(self):
+        super().__init__()
+        # тут я его настраивать начинаю
+        self.title("Настройка запросов")
+        self.geometry("920x500")
+
+        self.CommandText = Text(width=90,height=20,font=("Arial Bold", 12))
+        self.CommandText.grid(column=0, columnspan=4 ,row=1,pady=20,padx=35)
+
+        self.btn1 = ttk.Button(self, text="Обновить данные")
+        self.btn1["command"] = self.update
+        self.btn1.grid(column=0,row=0,pady=20,padx=35)
+
+        self.btn2 = ttk.Button(self, text="Сохранить данные")
+        self.btn2["command"] = self.load
+        self.btn2.grid(column=1, row=0, pady=20, padx=35)
+
+        self.btn3 = ttk.Button(self, text="Назад в меню")
+        self.btn3["command"] = self.back
+        self.btn3.grid(column=2, row=0, pady=20, padx=35)
+        self.update()
+
+        self.entryNameDb = ttk.Entry(self, width=20, font=("Arial Bold", 12))  # поле ввода
+        self.entryNameDb.grid(column= 3, row=0, columnspan=3, pady=10)
+        # через partial передаю нормально аргументы в метод иначе оч плохо всё будет
+
+        self.entryNameDb.insert(0, decryptedAccses[2])
+    def back(self):
+        self.destroy()
+        window = MainWindow()
+
+    def load(self):
+        test = self.CommandText.get('1.0', END)
+        mas = []
+        mas = test.split('\n')
+        mas = list(filter(None,mas))
+
+
+        user = decryptedAccses[1]
+        password = decryptedAccses[0]
+        dnName = self.entryNameDb.get()
+        try:
+            connection = cx_Oracle.connect(user + "/" + password + "@" + dnName, encoding="UTF-8")
+            print(connection)
+            cursor = connection.cursor()
+            try:
+
+                for i in mas:
+                    if(i != None or i != "" or i != ''):
+                        dnss = f"""
+                                           {i}"""
+                        cursor.execute(str(dnss))
+                        ver = cursor.fetchone()
+
+                wb = openpyxl.load_workbook('sql.xlsx')
+                sheet = wb.active
+
+                for i in range(len(mas)):
+                    sheet["A" + str(i + 1)] = mas[i]
+                wb.save('sql.xlsx')
+                showinfo(title="Данные сохраненны",
+                        message="Данные успешно сохраненны")
+            except:
+                showerror(title="Ошибка",
+                          message="Какая-то из запросов является не рабочим и выдаёт ошибку\nПока запросы не будут корректны, данные не сохранятся\nПроверьте что вы ввели")
+        except:
+            showerror(title="Ошибка",
+                      message="Не удалось подключиться к базе даныых")
+
+
+    def update(self):
+        gg = readxlsx()
+        self.CommandText.delete('1.0', END)
+        for i in range(len(gg)):
+            self.CommandText.insert(INSERT, gg[i] + '\n')
+
+
+
+#метод для создания потоков и управления ими
+def threads(maxLimit,nameDB):
     zgluchka =0
-
     xlsx = readxlsx()
     i = 0
     T = 1  # стартовое число потоков
     countermax = T
     sended_request = 0
-
-
-
     while zgluchka == 0:
         #это занимает некоторое время, надо что-то придумать с этим
         #currentCPU = GetCpuPersents()
         #для того чтобы узнать GPU -> psutil.virtual_memory()[2]
-        if psutil.virtual_memory()[2] < intMaxLimit:
+        if psutil.virtual_memory()[2] < maxLimit:
             T += 1
-        if psutil.virtual_memory()[2] > intMaxLimit:  # верхний порог нагрузки
+        if psutil.virtual_memory()[2] > maxLimit:  # верхний порог нагрузки
             T -= 1
         if T > countermax:  #
             countermax = T
@@ -83,34 +178,74 @@ def threads(maxLimit):
 
         threads = []
         for n in range(int(T)):
-            t = Thread(target=bdoracle, args=(xlsx,), daemon=False)
+            t = Thread(target=bdoracle, args=(xlsx,nameDB,), daemon=False)
             threads.append(t)
             t.start()
             sended_request = sended_request + 1
 
-#MainThread = Thread(target=threads, args=(), daemon=False)
-#p1 = Process(target=threads, daemon=False)
+
+#метод для поключения к БД и отправке запросов
+def bdoracle(xls, dnName):
+    user = decryptedAccses[1]
+    password = decryptedAccses[0]
+    connection = cx_Oracle.connect(user + "/" + password + "@" + dnName, encoding="UTF-8")
+    print(connection)
+    cursor = connection.cursor()
+
+    for i in xls:
+        dnss = f"""
+               {i}"""
+        cursor.execute(dnss)
+        ver = cursor.fetchone()
 
 
-def proc_start(maxLimit):
-    p_to_start = Process(target=threads,daemon=False,args=(maxLimit,))
+def ReadTxtAndBackMassive():
+    massive = []
+    d =  open("DecrypedData.txt", "r")
+    for line in d:
+        lineClear = line.replace("\n","")
+        massive.append(lineClear)
+    d.close()
+    f = open('DecrypedData.txt', 'w')
+    f.close()
+    return massive
+
+
+#метод для расшифровки данных для доступа к БД
+def ReadTxtAndBackMassiveWithout():
+    massive = []
+    d =  open("DecrypedData.txt", "r")
+    for line in d:
+        lineClear = line.replace("\n","")
+        massive.append(lineClear)
+    d.close()
+    return massive
+
+
+
+#Метод для получения октуальных данных о нагрузке
+def GetCpuPersents():
+    output = str(subprocess.check_output('wmic cpu get loadpercentage'))
+    nowCpu = int(output[24] + output[25])
+    return nowCpu
+
+
+#метод для запуска процесса в независимом пространсве от основной программы
+def proc_start(maxLimit, BD):
+    p_to_start = Process(target=threads, args=(int(maxLimit), BD,), daemon=False)
     p_to_start.start()
     return p_to_start
 
-def proc_pause(p_to_pause, seconds):
-    p_to_pause.sleep(seconds)
 
-
+#метод для остановки процесса
 def proc_stop(p_to_stop):
     p_to_stop.kill()
-    p_to_stop.value = None
-    del p_to_stop
 
 
 
 
-#окно нагрузки ЦПУ
-class WindowCPU(Tk):
+#главное окно приложения
+class MainWindow(Tk):
 
     #метод создания окна
     def __init__(self):
@@ -118,55 +253,108 @@ class WindowCPU(Tk):
         #главная настройка окна
         self.title("Тестирование")  # заголовок окна
         self.geometry(
-            '400x130')
-        self.resizable(height=False, width=False)
+            '790x230')
+        #self.resizable(height=False, width=False)
         self.label1 = Label(self, text="В поле ниже введите максимальную\nнагрузку на ПК в процентах",
                             font=("Arial Bold", 12), justify='left')  # просто информационное поле
         self.label1.grid(column=0, row=0, padx=10)  # это пишется чтобы элемент был хотя-бы виден и настроен по сетке
         self.labelStatus = Label(self, text="Остановлен", font=("Arial Bold", 12), justify='right')
-        self.labelStatus.grid(column=1, row=0,
-                         padx=10)  # это поле будем изменять. Оно нужно для отображения статуса программыlabel2.grid(column=1,row=0,sticky="e")
-        self.procents = Entry(self, width=20, font=("Arial Bold", 12))  # поле ввода
+        self.labelStatus.grid(column=2, row=0,padx=10)  # это поле будем изменять. Оно нужно для отображения статуса программы
+        self.procents = Entry(self, width=20, font=("Arial Bold", 12))  # поле ввода нагрузки в процентах
         self.procents.grid(column=0, row=1, pady=10, sticky="w", padx=10)
         btnStart = ttk.Button(self, text="Старт")
         btnStart.grid(column=0, row=2, pady=10, sticky="w", padx=10)
         btnStart["command"] = partial(self.btnStart)
 
-        btnPause = ttk.Button(self, text="Пауза")
-        btnPause.grid(column=0, row=2, pady=10)
-        btnPause["command"] = self.btnPause
+        self.labelStatus = Label(self, text="В поле ниже введите название базы данных", font=("Arial Bold", 12), justify='right')
+        self.labelStatus.grid(column=1, row=0,padx=10)
+        self.nameDB = Entry(self, width=20, font=("Arial Bold", 12))  # поле ввода названия БД
+        self.nameDB.grid(column=1, row=1, pady=10, sticky="n", padx=10)
+
+        #вставляю в поле ввода названия БД - название БД взятого из файла
+        if(onLocal == False):
+            print()
+            self.nameDB.insert(0,str( decryptedAccses[2]));
 
         btnStop = ttk.Button(self, text="Остановить")
-        btnStop.grid(column=1, row=2, pady=10, sticky="w")
+        btnStop.grid(column=2, row=2, pady=10, sticky="w")
         btnStop["command"] = self.btnStop
 
+        btnSave = ttk.Button(self, text="Переход в окно настройки запросов")
+        btnSave.grid(column=0, row=3, pady=10, sticky="w", padx=10)
+        btnSave["command"] = self.gotoZapros
 
-       # self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        btnSave = ttk.Button(self, text="Переход в окно настройки таймера")
+        btnSave.grid(column=1, row=3, pady=10, sticky="w", padx=10)
+        btnSave["command"] = self.gotoTimer
 
-   # 3def on_closing(self):
-    #    os.remove("DecrypedData.txt")
+
+
+
+    def ProgramDelay(self):
+        global p
+        from datetime import datetime
+        now = datetime.now()
+        from datetime import timedelta
+        run_at = now + timedelta(minutes=1)
+        delay = (run_at - now).total_seconds()
+        proc_stop(p)
+        time.sleep(delay)
+        p = proc_start(self.procents.get(),self.nameDB.get())
+
+
+
     #старт теста
     def btnStart(self):
         self.labelStatus.config(text="Работает")
+        xlsx = readxlsx()
+
+        if(len(self.nameDB.get()) == 0):
+            showerror(title="Ошибка",
+                      message="Введите название базы данных к которой хотите подключиться")
+        else:
+            if(len(self.procents.get()) == 0):
+                showerror(title="Ошибка",
+                          message="Введите число для нагрузки")
+            else:
+                global p
+                p = proc_start(self.procents.get(),self.nameDB.get())
+                #p = threads(int(self.procents.get()),self.nameDB.get())
+
+
+
+
+
+    def gotoZapros(self):
+        self.destroy()
+        window = EditXLSS()
+
+    #Кнопка для запска через определённое время или для возобновления работы через определённое время
+    def gotoTimer(self):
         global p
-        p = proc_start(str(int(self.procents.get())))
+        from datetime import datetime
+        now = datetime.now()
+        from datetime import timedelta
+        run_at = now + timedelta(minutes=1)
+        delay = (run_at - now).total_seconds()
+        proc_stop(p)
+        time.sleep(delay)
+        p = proc_start(self.procents.get(), self.nameDB.get())
 
 
-
-    #пауза
-    def btnPause(self):
-        self.labelStatus.config(text="На пауза")
-        proc_pause(p,5)
-
-    #стоп
+    #Кнопка для остановки нагрузки
     def btnStop(self):
         self.labelStatus.config(text="Остановлен")
+        global p
         proc_stop(p)
 
 
 
 
 
+
+
+# Метод для считывая файла с запросами sql.xlsx
 def readxlsx():
     wb = openpyxl.load_workbook('sql.xlsx')
     sheet = wb.active
@@ -175,15 +363,7 @@ def readxlsx():
         xlsx.append(str(sheet["A" + str(i + 1)].value))
     return xlsx
 
-def bd(quvery):
-    con = pymysql.connect(host='localhost', user='root', password='1234', db='marlo')  # конект к бд
-    for i in quvery:
-        cur = con.cursor()
-        cur.arraysize = 56000
-        print(i)
-        cur.execute(query=i)
-    con.close()
-
+# Метод для создания логов
 def log(num,nummax,sended_request):
     current_date = date.today()
     dt_now = datetime.datetime.now()
@@ -192,27 +372,27 @@ def log(num,nummax,sended_request):
     f.close()
 
 
+onLocal = True #если True, то запуск будет без проверок на подключение и без дешифровки данных для подключения
+#если False, то со всеми ними
 
-
-
-
-
-
-
-#это код для запуска приложения, так сказать главное окно для начала переходов (костыли)
+# Метод для обработки нажатия кновки, который проверяет наличие всех необходимых компонентов, для запуска программы
 def click():
     #чтение дешифрованных данных и их удаление
-    sus = subprocess.Popen('Project1.exe')
-    time.sleep(5)
-    sus.terminate()
-    decryptedAccses = ReadTxtAndBackMassive()
-    xlsx = readxlsx()
-    if (xlsx != [] and decryptedAccses != []):
-        root.destroy()
-        window = WindowCPU()
+    if(onLocal == False):
+        subprocess.Popen('Project1.exe')
+        time.sleep(5)
+        global decryptedAccses
+        decryptedAccses = ReadTxtAndBackMassive()
+        xlsx = readxlsx()
+        if (xlsx != [] and decryptedAccses != []):
+            root.destroy()
+            window = MainWindow()
+        else:
+            showerror(title="Ошибка",
+                      message="К сожалению первичная настройка приложения прошла не успешно\nПроверьте, всё-ли верно вы настроили")
     else:
-        showerror(title="Ошибка",
-                  message="К сожалению первичная настройка приложения прошла не успешно\nПроверьте, всё-ли верно вы настроили")
+        root.destroy()
+        window = MainWindow()
 
 
 
